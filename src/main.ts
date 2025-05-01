@@ -2,6 +2,7 @@ import paper from "paper";
 import { mat4, vec2, vec3 } from "gl-matrix";
 
 import "./style.css";
+import flagSvg from "./flag.svg?raw";
 
 let PROJECTION_MATRIX: mat4;
 
@@ -150,6 +151,14 @@ window.addEventListener("load", () => {
   const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
   paper.setup(canvas);
 
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = flagSvg;
+  const svgElement = tempDiv.querySelector("svg") as SVGElement;
+  console.log(svgElement);
+  const flagItem = paper.project.importSVG(svgElement);
+  flagItem.position = paper.view.center;
+  flagItem.scale(5);
+
   const cameraPosition = vec3.fromValues(0, 15, -30);
   const targetPosition = vec3.fromValues(0, 0, 0);
 
@@ -245,4 +254,7 @@ window.addEventListener("load", () => {
       cubes.push(randomCube(-20));
     }
   };
+
 });
+
+console.log(flagSvg);
