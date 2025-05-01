@@ -233,7 +233,7 @@ window.addEventListener("load", () => {
 
   let initialNumberOfCubes = cubes.length;
 
-  let time = 0;
+  // let time = 0;
   paper.view.onFrame = ({ delta }: { delta: number }) => {
     // time += delta;
     // while (time > 2) {
