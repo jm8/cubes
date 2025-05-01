@@ -1,10 +1,9 @@
-import paper from 'paper';
-import { mat4, vec2, vec3 } from 'gl-matrix';
+import paper from "paper";
+import { mat4, vec2, vec3 } from "gl-matrix";
 
 import "./style.css";
 
 let PROJECTION_MATRIX: mat4;
-
 
 const CUBE_POINTS = [
   vec3.fromValues(-1, -1, -1), // 0
@@ -35,56 +34,80 @@ const CUBE_NORMALS = [
   vec3.fromValues(1, 0, 0),
 ];
 
+type CubeParams = {
+  rotation: vec3,
+  rotationalVelocity: vec3,
+  position: vec3,
+  velocity: vec3,
+  scale: number,
+  color: paper.Color,
+  explosion: number
+};
+
 class Cube {
   rotation: vec3;
+  rotationalVelocity: vec3;
   position: vec3;
+  velocity: vec3;
   faces: paper.Path[];
   scale: number;
   color: paper.Color;
-  offset: vec2;
   explosion: number;
 
-  constructor(rotation: vec3, position: vec3, scale: number, color: paper.Color, offset: vec2, explosion: number) {
-    this.rotation = vec3.copy(vec3.create(), rotation);
-    this.position = vec3.copy(vec3.create(), position);
-    this.scale = scale;
-    this.color = color;
-    this.offset = offset;
-    this.explosion = explosion;
+  constructor(params: CubeParams) {
+    this.rotation = vec3.copy(vec3.create(), params.rotation);
+    this.rotationalVelocity = vec3.copy(vec3.create(), params.rotationalVelocity);
+    this.position = vec3.copy(vec3.create(), params.position);
+    this.velocity = vec3.copy(vec3.create(), params.velocity);
+    this.scale = params.scale;
+    this.color = params.color;
+    this.explosion = params.explosion;
 
+    const points = this.computePoints().map((face) =>
+      face.map(([x, y]) => new paper.Point(x, y))
+    );
 
-    const points = this.computePoints().map(face => face.map(([x, y]) => new paper.Point(x, y)));
-
-    this.faces = points.map(face => {
+    this.faces = points.map((face) => {
       const path = new paper.Path(face);
       path.strokeColor = this.color;
       path.closed = true;
       path.strokeWidth = 2;
-      path.strokeJoin = 'bevel';
+      path.strokeJoin = "bevel";
       return path;
     });
   }
 
   computePoints(): vec2[][] {
     const origin = vec3.create();
-    return CUBE_FACES.map((face, faceIndex) => face.map(pointIndex => {
-      const transformed = vec3.copy(vec3.create(), CUBE_POINTS[pointIndex]);
-      vec3.scaleAndAdd(transformed, transformed, CUBE_NORMALS[faceIndex], this.explosion);
-      vec3.rotateX(transformed, transformed, origin, this.rotation[0]);
-      vec3.rotateY(transformed, transformed, origin, this.rotation[1]);
-      vec3.rotateZ(transformed, transformed, origin, this.rotation[2]);
-      vec3.scale(transformed, transformed, this.scale);
-      vec3.add(transformed, transformed, this.position);
-      vec3.transformMat4(transformed, transformed, PROJECTION_MATRIX);
-      const result = vec2.fromValues(transformed[0], transformed[1]);
-      vec2.add(result, result, this.offset);
-      vec2.scale(result, result, paper.view.bounds.width * 2);
-      vec2.add(result, result, [paper.view.bounds.width / 2, paper.view.bounds.height / 2]);
-      return result;
-    }));
+    return CUBE_FACES.map((face, faceIndex) =>
+      face.map((pointIndex) => {
+        const transformed = vec3.copy(vec3.create(), CUBE_POINTS[pointIndex]);
+        vec3.scaleAndAdd(
+          transformed,
+          transformed,
+          CUBE_NORMALS[faceIndex],
+          this.explosion
+        );
+        vec3.rotateX(transformed, transformed, origin, this.rotation[0]);
+        vec3.rotateY(transformed, transformed, origin, this.rotation[1]);
+        vec3.rotateZ(transformed, transformed, origin, this.rotation[2]);
+        vec3.scale(transformed, transformed, this.scale);
+        vec3.sub(transformed, transformed, this.position);
+        vec3.transformMat4(transformed, transformed, PROJECTION_MATRIX);
+        const result = vec2.fromValues(transformed[0], transformed[1]);
+        vec2.scale(result, result, paper.view.bounds.width * 2);
+        vec2.add(result, result, [
+          paper.view.bounds.width / 2,
+          paper.view.bounds.height / 2,
+        ]);
+        return result;
+      })
+    );
   }
 
-  update() {
+  update(delta: number) {
+    vec3.scaleAndAdd(this.rotation, this.rotation, this.rotationalVelocity, delta);
+    vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
     const points = this.computePoints();
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 4; j++) {
@@ -98,62 +121,122 @@ class Cube {
 class DoubledCube extends Cube {
   doubleFaces: paper.Path[];
 
-  constructor(rotation: vec3, position: vec3, scale: number, color: paper.Color, offset: vec2, explosion: number) {
-    super(rotation, position, scale, color, offset, explosion);
-    this.doubleFaces = this.faces.map(face => {
-      let path = new paper.Path(face.segments.map(segment => segment.point.add(5)));
+  constructor(params: CubeParams) {
+    super(params);
+    this.doubleFaces = this.faces.map((face) => {
+      let path = new paper.Path(
+        face.segments.map((segment) => segment.point.add(5))
+      );
       path.strokeColor = this.color;
       path.closed = true;
       path.strokeWidth = 2;
-      path.strokeJoin = 'bevel';
+      path.strokeJoin = "bevel";
       return path;
     });
   }
 
-  update() {
-    super.update();
+  update(delta: number) {
+    super.update(delta);
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 4; j++) {
-        this.doubleFaces[i].segments[j].point = this.faces[i].segments[j].point.add(5);
+        this.doubleFaces[i].segments[j].point =
+          this.faces[i].segments[j].point.add(5);
       }
     }
   }
-  
 }
 
-
-window.addEventListener('load', () => {
+window.addEventListener("load", () => {
   const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
   paper.setup(canvas);
-  
-  // const viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(50, 50, 50), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0)); 
-  // PROJECTION_MATRIX = mat4.mul(mat4.create(), viewMatrix, mat4.create());
 
-  const viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(25, 15, 25), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0)); 
-  const perspectiveMatrix = mat4.perspective(mat4.create(),.6*Math.PI, 1, .001,1000);
-  // const perspectiveMatrix = mat4.create();
-  PROJECTION_MATRIX = mat4.mul(mat4.create(), perspectiveMatrix, viewMatrix);
-  // mat4.mul(PROJECTION_MATRIX, perspectiveMatrix, PROJECTION_MATRIX);
-  // var lookAtMatrix=mat4.create();
-  // var perspectiveMatrix=mat4.create();
-  // var uniformMatrix=mat4.create();
+  const cameraPosition = vec3.fromValues(0, 15, -30);
+  const targetPosition = vec3.fromValues(0, 0, 0);
 
-  // let eye=vec3.fromValues(0,0,3);
-  // let center=vec3.fromValues(0,0,0);
-  // let up=vec3.fromValues(0,1,0);
-  // mat4.lookAt(lookAtMatrix,eye,center,up);
-  // mat4.perspective(perspectiveMatrix,.6*Math.PI,1,.001,1000);
-  // mat4.multiply(uniformMatrix,lookAtMatrix,uniformMatrix);
-  // mat4.multiply(uniformMatrix,perspectiveMatrix,uniformMatrix);
-  // PROJECTION_MATRIX = uniformMatrix;
-  // PROJECTION_MATRIX = mat4.fromValues(
-  //   Math.sqrt(3), 1, Math.SQRT2, 0, // fist column
-  //   0, 2, -Math.SQRT2, 0, // second column
-  //   Math.SQRT2, -Math.SQRT2, Math.SQRT2, 0, // third column
-  //   paper.view.bounds.width / 2, paper.view.bounds.height / 2, 0, 0, // fourth column 
+  const viewMatrix = mat4.lookAt(
+    mat4.create(),
+    cameraPosition,
+    targetPosition,
+    vec3.fromValues(0, 1, 0) // y is up
+  );
+  // const perspectiveMatrix = mat4.perspective(
+  //   mat4.create(),
+  //   0.6 * Math.PI,
+  //   1,
+  //   0.001,
+  //   1000
   // );
+  const perspectiveMatrix = mat4.ortho(
+    mat4.create(),
+    -60,
+    60,
+    -60,
+    60,
+    .001,
+    300,
+  );
+  PROJECTION_MATRIX = mat4.mul(mat4.create(), perspectiveMatrix, viewMatrix);
 
-  const cube1 = new Cube(vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), 1, new paper.Color("#ffffff"), vec2.fromValues(0, 0), 0);
+  const cube1 = new Cube({
+    position: vec3.fromValues(0, 0, 0),
+    velocity: vec3.fromValues(0, 0, 0),
+    rotation: vec3.fromValues(0, Math.PI / 8, 0),
+    rotationalVelocity: vec3.fromValues(0, 0, 0),
+    color: new paper.Color("#ffffff"),
+    explosion: .5,
+    scale: 1,
+  });
+
+  function randomVector(magnitude: number): vec3 {
+    // https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
+    const theta = Math.random() * 2 * Math.PI;
+    const z = -1 + Math.random() * 2;
+    const a = Math.sqrt(1 - z * z);
+    const x = a * Math.cos(theta);
+    const y = a * Math.sin(theta);
+    return vec3.scale(vec3.create(), vec3.fromValues(x, y, z), magnitude);
+  }
+
+  const cubes = [
+    cube1,
+    new DoubledCube({
+      position: vec3.fromValues(2, 0, 10),
+      velocity: vec3.fromValues(1, 0, 0),
+      rotation: vec3.fromValues(0, 0, 0),
+      rotationalVelocity: randomVector(.3),
+      color: new paper.Color("#ffffff"),
+      explosion: 0,
+      scale: 1,
+    }),
+    new DoubledCube({
+      position: vec3.fromValues(-4, 1, 15),
+      velocity: vec3.fromValues(1, 0, 0),
+      rotation: randomVector(1),
+      rotationalVelocity: randomVector(.3),
+      color: new paper.Color("#ffffff"),
+      explosion: 0,
+      scale: 1,
+    }),
+    new DoubledCube({
+      position: vec3.fromValues(-8, -8, 15),
+      velocity: vec3.fromValues(1, 0, 0),
+      rotation: randomVector(1),
+      rotationalVelocity: randomVector(.3),
+      color: new paper.Color("#ffffff"),
+      explosion: 0,
+      scale: 1,
+    }),
+    new DoubledCube({
+      position: vec3.fromValues(-3, -10, 15),
+      velocity: vec3.fromValues(1, 0, 0),
+      rotation: randomVector(1),
+      rotationalVelocity: randomVector(.3),
+      color: new paper.Color("#ffffff"),
+      explosion: 0,
+      scale: 1,
+    }),
+  ]
+
   let time = 0;
   paper.view.onFrame = ({ delta }: { delta: number }) => {
     time += delta;
@@ -161,14 +244,11 @@ window.addEventListener('load', () => {
       time -= 2;
     }
     if (time < 1) {
-      cube1.explosion = .5 * time;
+      cube1.explosion = 0.5 * time;
     } else {
-      cube1.explosion = .5 * (1 - (time - 1));
+      cube1.explosion = 0.5 * (1 - (time - 1));
     }
 
-    vec3.add(cube1.rotation, cube1.rotation, [0, delta, 0]);
-
-    cube1.update();
-  }
+    cubes.forEach(cube => cube.update(delta));
+  };
 });
-
