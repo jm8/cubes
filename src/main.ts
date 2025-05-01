@@ -3,9 +3,7 @@ import { mat4, vec2, vec3 } from 'gl-matrix';
 
 import "./style.css";
 
-// Isometric projection
 let PROJECTION_MATRIX: mat4;
-// const PROJECTION_MATRIX = mat4.create();
 
 
 const CUBE_POINTS = [
@@ -75,11 +73,13 @@ class Cube {
       vec3.rotateX(transformed, transformed, origin, this.rotation[0]);
       vec3.rotateY(transformed, transformed, origin, this.rotation[1]);
       vec3.rotateZ(transformed, transformed, origin, this.rotation[2]);
-      vec3.scale(transformed, transformed, this.scale * 30);
-      vec3.scaleAndAdd(transformed, transformed, this.position, 30);
+      vec3.scale(transformed, transformed, this.scale);
+      vec3.add(transformed, transformed, this.position);
       vec3.transformMat4(transformed, transformed, PROJECTION_MATRIX);
       const result = vec2.fromValues(transformed[0], transformed[1]);
       vec2.add(result, result, this.offset);
+      vec2.scale(result, result, paper.view.bounds.width * 2);
+      vec2.add(result, result, [paper.view.bounds.width / 2, paper.view.bounds.height / 2]);
       return result;
     }));
   }
@@ -125,14 +125,35 @@ class DoubledCube extends Cube {
 window.addEventListener('load', () => {
   const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
   paper.setup(canvas);
-  PROJECTION_MATRIX = mat4.fromValues(
-    Math.sqrt(3), 1, Math.SQRT2, 0, // fist column
-    0, 2, -Math.SQRT2, 0, // second column
-    Math.SQRT2, -Math.SQRT2, Math.SQRT2, 0, // third column
-    paper.view.bounds.width / 2, paper.view.bounds.height / 2, 0, 0, // fourth column 
-  );
+  
+  // const viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(50, 50, 50), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0)); 
+  // PROJECTION_MATRIX = mat4.mul(mat4.create(), viewMatrix, mat4.create());
 
-  const cube1 = new DoubledCube(vec3.fromValues(Math.PI / 2, Math.PI / 2, 0), vec3.fromValues(0, 0, 0), 1, new paper.Color("#ffffff"), vec2.fromValues(0, 0), 0);
+  const viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(25, 15, 25), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0)); 
+  const perspectiveMatrix = mat4.perspective(mat4.create(),.6*Math.PI, 1, .001,1000);
+  // const perspectiveMatrix = mat4.create();
+  PROJECTION_MATRIX = mat4.mul(mat4.create(), perspectiveMatrix, viewMatrix);
+  // mat4.mul(PROJECTION_MATRIX, perspectiveMatrix, PROJECTION_MATRIX);
+  // var lookAtMatrix=mat4.create();
+  // var perspectiveMatrix=mat4.create();
+  // var uniformMatrix=mat4.create();
+
+  // let eye=vec3.fromValues(0,0,3);
+  // let center=vec3.fromValues(0,0,0);
+  // let up=vec3.fromValues(0,1,0);
+  // mat4.lookAt(lookAtMatrix,eye,center,up);
+  // mat4.perspective(perspectiveMatrix,.6*Math.PI,1,.001,1000);
+  // mat4.multiply(uniformMatrix,lookAtMatrix,uniformMatrix);
+  // mat4.multiply(uniformMatrix,perspectiveMatrix,uniformMatrix);
+  // PROJECTION_MATRIX = uniformMatrix;
+  // PROJECTION_MATRIX = mat4.fromValues(
+  //   Math.sqrt(3), 1, Math.SQRT2, 0, // fist column
+  //   0, 2, -Math.SQRT2, 0, // second column
+  //   Math.SQRT2, -Math.SQRT2, Math.SQRT2, 0, // third column
+  //   paper.view.bounds.width / 2, paper.view.bounds.height / 2, 0, 0, // fourth column 
+  // );
+
+  const cube1 = new Cube(vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), 1, new paper.Color("#ffffff"), vec2.fromValues(0, 0), 0);
   let time = 0;
   paper.view.onFrame = ({ delta }: { delta: number }) => {
     time += delta;
@@ -144,6 +165,8 @@ window.addEventListener('load', () => {
     } else {
       cube1.explosion = .5 * (1 - (time - 1));
     }
+
+    vec3.add(cube1.rotation, cube1.rotation, [0, delta, 0]);
 
     cube1.update();
   }
