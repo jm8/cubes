@@ -140,6 +140,12 @@ class Cube {
       }
     }
   }
+
+  delete() {
+    for (const face of this.faces) {
+      face.remove();
+    }
+  }
 }
 
 class DoubledCube extends Cube {
@@ -171,6 +177,13 @@ class DoubledCube extends Cube {
         this.doubleFaces[i].segments[j].point =
           this.faces[i].segments[j].point.add(5);
       }
+    }
+  }
+
+  delete() {
+    super.delete();
+    for (const face of this.doubleFaces) {
+      face.remove();
     }
   }
 }
@@ -274,7 +287,11 @@ window.addEventListener("load", () => {
 
     cubes = cubes.filter(cube => {
       cube.update(delta);
-      return cube.position[0] < 20;
+      if (cube.position[0] > 20) {
+        cube.delete();
+        return false;
+      }
+      return true;
     });
 
     while (cubes.length < initialNumberOfCubes) {
