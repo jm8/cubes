@@ -6,6 +6,9 @@ import flagSvg from "./flag.svg?raw";
 
 let PROJECTION_MATRIX: mat4;
 let flagItem: paper.Item;
+let backLayer: paper.Layer;
+let frontLayer: paper.Layer;
+
 
 const CUBE_POINTS = [
   vec3.fromValues(-1, -1, -1), // 0
@@ -78,6 +81,11 @@ class Cube {
       path.closed = true;
       path.strokeWidth = 2;
       path.strokeJoin = "bevel";
+      if (this.containsFlag) {
+        backLayer.addChild(path);
+      } else {
+        frontLayer.addChild(path);
+      }
       return path;
     });
   }
@@ -141,12 +149,17 @@ class DoubledCube extends Cube {
     super(params);
     this.doubleFaces = this.faces.map((face) => {
       let path = new paper.Path(
-        face.segments.map((segment) => segment.point.add(5))
+        face.segments.map((segment) => segment.point.add(5/1920 * paper.view.bounds.width))
       );
       path.strokeColor = this.color;
       path.closed = true;
       path.strokeWidth = 2;
       path.strokeJoin = "bevel";
+      if (this.containsFlag) {
+        backLayer.addChild(path);
+      } else {
+        frontLayer.addChild(path);
+      }
       return path;
     });
   }
@@ -165,14 +178,18 @@ class DoubledCube extends Cube {
 window.addEventListener("load", () => {
   const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
   paper.setup(canvas);
+  frontLayer = new paper.Layer();
+  backLayer = new paper.Layer();
 
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = flagSvg;
   const svgElement = tempDiv.querySelector("svg") as SVGElement;
   console.log(svgElement);
   flagItem = paper.project.importSVG(svgElement);
+  const ratio = flagItem.bounds.width / flagItem.bounds.height;
+  flagItem.bounds.width = paper.view.bounds.width * .4;
+  flagItem.bounds.height = flagItem.bounds.width / ratio;
   flagItem.position = paper.view.center;
-  flagItem.scale(5);
 
   const cameraPosition = vec3.fromValues(0, 15, -30);
   const targetPosition = vec3.fromValues(0, 0, 0);
