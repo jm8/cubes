@@ -8,7 +8,7 @@ let PROJECTION_MATRIX: mat4;
 let flagItem: paper.Item;
 let backLayer: paper.Layer;
 let frontLayer: paper.Layer;
-
+let flagRatio: number;
 
 const CUBE_POINTS = [
   vec3.fromValues(-1, -1, -1), // 0
@@ -109,7 +109,7 @@ class Cube {
         vec3.sub(transformed, transformed, this.position);
         vec3.transformMat4(transformed, transformed, PROJECTION_MATRIX);
         const result = vec2.fromValues(transformed[0], transformed[1]);
-        vec2.scale(result, result, paper.view.bounds.width * 2);
+        vec2.scale(result, result, paper.view.bounds.height * (1920 / 931) * 2);
         vec2.add(result, result, [
           paper.view.bounds.width / 2,
           paper.view.bounds.height / 2,
@@ -178,6 +178,7 @@ class DoubledCube extends Cube {
 window.addEventListener("load", () => {
   const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
   paper.setup(canvas);
+  console.log(paper.view.bounds.width, paper.view.bounds.height);
   frontLayer = new paper.Layer();
   backLayer = new paper.Layer();
 
@@ -186,10 +187,8 @@ window.addEventListener("load", () => {
   const svgElement = tempDiv.querySelector("svg") as SVGElement;
   console.log(svgElement);
   flagItem = paper.project.importSVG(svgElement);
-  const ratio = flagItem.bounds.width / flagItem.bounds.height;
-  flagItem.bounds.width = paper.view.bounds.width * .4;
-  flagItem.bounds.height = flagItem.bounds.width / ratio;
-  flagItem.position = paper.view.center;
+  flagRatio = flagItem.bounds.width / flagItem.bounds.height;
+  positionFlag(flagItem, flagRatio);
 
   const cameraPosition = vec3.fromValues(0, 15, -30);
   const targetPosition = vec3.fromValues(0, 0, 0);
@@ -269,15 +268,9 @@ window.addEventListener("load", () => {
 
   // let time = 0;
   paper.view.onFrame = ({ delta }: { delta: number }) => {
-    // time += delta;
-    // while (time > 2) {
-    //   time -= 2;
-    // }
-    // if (time < 1) {
-    //   cube1.explosion = 0.5 * time;
-    // } else {
-    //   cube1.explosion = 0.5 * (1 - (time - 1));
-    // }
+    const { width, height } = canvas.getBoundingClientRect();
+    paper.view.viewSize = new paper.Size(width, height);
+    positionFlag(flagItem, flagRatio);
 
     cubes = cubes.filter(cube => {
       cube.update(delta);
@@ -296,3 +289,9 @@ function isInFrontOfFlag(points: vec3[]): boolean {
   return maxZ > 0;
 }
 
+function positionFlag(flagItem: paper.Item, ratio: number) {
+  flagItem.bounds.width = paper.view.bounds.height * (1920 / 931) * .4;
+  flagItem.bounds.height = flagItem.bounds.width / ratio;
+  flagItem.position = paper.view.center;
+ 
+}
