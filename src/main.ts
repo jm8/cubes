@@ -5,6 +5,7 @@ import "./style.css";
 import flagSvg from "./flag.svg?raw";
 
 let PROJECTION_MATRIX: mat4;
+let flagItem: paper.Item;
 
 const CUBE_POINTS = [
   vec3.fromValues(-1, -1, -1), // 0
@@ -42,7 +43,8 @@ type CubeParams = {
   velocity: vec3,
   scale: number,
   color: paper.Color,
-  explosion: number
+  explosion: number,
+  containsFlag: boolean,
 };
 
 class Cube {
@@ -54,6 +56,7 @@ class Cube {
   scale: number;
   color: paper.Color;
   explosion: number;
+  containsFlag: boolean;
 
   constructor(params: CubeParams) {
     this.rotation = vec3.copy(vec3.create(), params.rotation);
@@ -63,6 +66,7 @@ class Cube {
     this.scale = params.scale;
     this.color = params.color;
     this.explosion = params.explosion;
+    this.containsFlag = params.containsFlag;
 
     const points = this.computePoints().map((face) =>
       face.map(([x, y]) => new paper.Point(x, y))
@@ -78,7 +82,7 @@ class Cube {
     });
   }
 
-  computePoints(): vec2[][] {
+  computePoints(): vec3[][] {
     const origin = vec3.create();
     return CUBE_FACES.map((face, faceIndex) =>
       face.map((pointIndex) => {
@@ -92,6 +96,7 @@ class Cube {
         vec3.rotateX(transformed, transformed, origin, this.rotation[0]);
         vec3.rotateY(transformed, transformed, origin, this.rotation[1]);
         vec3.rotateZ(transformed, transformed, origin, this.rotation[2]);
+        const z = transformed[2];
         vec3.scale(transformed, transformed, this.scale);
         vec3.sub(transformed, transformed, this.position);
         vec3.transformMat4(transformed, transformed, PROJECTION_MATRIX);
@@ -101,7 +106,7 @@ class Cube {
           paper.view.bounds.width / 2,
           paper.view.bounds.height / 2,
         ]);
-        return result;
+        return vec3.fromValues(result[0], result[1], z);
       })
     );
   }
@@ -111,6 +116,16 @@ class Cube {
     vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
     const points = this.computePoints();
     for (let i = 0; i < 6; i++) {
+      if (this.containsFlag) {
+        if (isInFrontOfFlag(points[i])) {
+          this.faces[i].insertAbove(flagItem);
+          // this.faces[i].strokeColor = new paper.Color("yellow");
+        } else {
+          this.faces[i].insertBelow(flagItem);
+          // this.faces[i].strokeColor = new paper.Color("blue");
+        }
+      }
+
       for (let j = 0; j < 4; j++) {
         this.faces[i].segments[j].point.x = points[i][j][0];
         this.faces[i].segments[j].point.y = points[i][j][1];
@@ -155,7 +170,7 @@ window.addEventListener("load", () => {
   tempDiv.innerHTML = flagSvg;
   const svgElement = tempDiv.querySelector("svg") as SVGElement;
   console.log(svgElement);
-  const flagItem = paper.project.importSVG(svgElement);
+  flagItem = paper.project.importSVG(svgElement);
   flagItem.position = paper.view.center;
   flagItem.scale(5);
 
@@ -194,6 +209,7 @@ window.addEventListener("load", () => {
     color: new paper.Color("#ffffff"),
     explosion: .5,
     scale: 1.5,
+    containsFlag: true,
   });
 
   function rand(a: number, b: number): number {
@@ -219,6 +235,7 @@ window.addEventListener("load", () => {
       rotationalVelocity: randomVector(.3),
       scale: 1,
       velocity: vec3.fromValues(rand(.4, 1), 0, 0),
+      containsFlag: false,
     })
   }
 
@@ -257,4 +274,8 @@ window.addEventListener("load", () => {
 
 });
 
-console.log(flagSvg);
+function isInFrontOfFlag(points: vec3[]): boolean {
+  const maxZ = Math.max(...points.map(point => point[2]));
+  return maxZ > 0;
+}
+
