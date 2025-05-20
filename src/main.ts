@@ -230,17 +230,6 @@ window.addEventListener("load", () => {
   );
   PROJECTION_MATRIX = mat4.mul(mat4.create(), perspectiveMatrix, viewMatrix);
 
-  const cube1 = new Cube({
-    position: vec3.fromValues(0, 0, 0),
-    velocity: vec3.fromValues(0, 0, 0),
-    rotation: vec3.fromValues(0, Math.PI / 8, 0),
-    rotationalVelocity: vec3.fromValues(0, .15, 0),
-    color: new paper.Color("#ffffff"),
-    explosion: .5,
-    scale: 1.5,
-    containsFlag: true,
-  });
-
   function rand(a: number, b: number): number {
     return a + (b - a) * Math.random();
   }
@@ -268,36 +257,62 @@ window.addEventListener("load", () => {
     })
   }
 
-  let cubes = [
-    cube1,
-  ]
+  // const cube1 = new Cube({
+  //   position: vec3.fromValues(0, 0, 0),
+  //   velocity: vec3.fromValues(0, 0, 0),
+  //   rotation: vec3.fromValues(0, Math.PI / 8, 0),
+  //   rotationalVelocity: vec3.fromValues(0, .15, 0),
+  //   color: new paper.Color("#ffffff"),
+  //   explosion: .5,
+  //   scale: 1.5,
+  //   containsFlag: true,
+  // });
+
+  // let cubes = [
+  //   cube1,
+  // ]
 
 
-  for (let x = -20; x < 20; x += 6) {
-    cubes.push(randomCube(x));
-  }
+  // for (let x = -20; x < 20; x += 6) {
+  //   cubes.push(randomCube(x));
+  // }
 
-  let initialNumberOfCubes = cubes.length;
+  // let initialNumberOfCubes = cubes.length;
 
-  // let time = 0;
-  paper.view.onFrame = ({ delta }: { delta: number }) => {
-    const { width, height } = canvas.getBoundingClientRect();
-    paper.view.viewSize = new paper.Size(width, height);
-    positionFlag(flagItem, flagRatio);
+  // // let time = 0;
+  // paper.view.onFrame = ({ delta }: { delta: number }) => {
+  //   const { width, height } = canvas.getBoundingClientRect();
+  //   paper.view.viewSize = new paper.Size(width, height);
+  //   positionFlag(flagItem, flagRatio);
 
-    cubes = cubes.filter(cube => {
-      cube.update(delta);
-      if (cube.position[0] > 20) {
-        cube.delete();
-        return false;
-      }
-      return true;
-    });
+  //   cubes = cubes.filter(cube => {
+  //     cube.update(delta);
+  //     if (cube.position[0] > 20) {
+  //       cube.delete();
+  //       return false;
+  //     }
+  //     return true;
+  //   });
 
-    while (cubes.length < initialNumberOfCubes) {
-      cubes.push(randomCube(-20));
-    }
-  };
+  //   while (cubes.length < initialNumberOfCubes) {
+  //     cubes.push(randomCube(-20));
+  //   }
+  // };
+  //
+  const cube1 = new Cube({
+    position: vec3.fromValues(0, 0, 0),
+    velocity: vec3.fromValues(0, 0, 0),
+    rotation: vec3.fromValues(0, Math.PI / 8, 0),
+    rotationalVelocity: vec3.fromValues(0, .15, 0),
+    color: new paper.Color("#ffffff"),
+    explosion: .5,
+    scale: 1.5,
+    containsFlag: true,
+  });
+  cube1.update(0);
+
+  const svg = paper.project.exportSVG({ asString: true, bounds: 'content' });
+  console.log(svg);
 
 });
 
