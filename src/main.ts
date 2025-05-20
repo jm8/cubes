@@ -155,7 +155,7 @@ class DoubledCube extends Cube {
     super(params);
     this.doubleFaces = this.faces.map((face) => {
       let path = new paper.Path(
-        face.segments.map((segment) => segment.point.add(5/1920 * paper.view.bounds.width))
+        face.segments.map((segment) => segment.point.add(5 / 1920 * paper.view.bounds.width))
       );
       path.strokeColor = this.color;
       path.closed = true;
@@ -257,6 +257,8 @@ window.addEventListener("load", () => {
     })
   }
 
+  void randomCube;
+
   // const cube1 = new Cube({
   //   position: vec3.fromValues(0, 0, 0),
   //   velocity: vec3.fromValues(0, 0, 0),
@@ -302,17 +304,49 @@ window.addEventListener("load", () => {
   const cube1 = new Cube({
     position: vec3.fromValues(0, 0, 0),
     velocity: vec3.fromValues(0, 0, 0),
-    rotation: vec3.fromValues(0, Math.PI / 8, 0),
-    rotationalVelocity: vec3.fromValues(0, .15, 0),
+    rotation: vec3.fromValues(0, 0, 0),
+    rotationalVelocity: vec3.fromValues(0, 0, 0),
     color: new paper.Color("#ffffff"),
-    explosion: .5,
+    explosion: 0,
     scale: 1.5,
     containsFlag: true,
   });
+  // flagItem.remove();
   cube1.update(0);
 
-  const svg = paper.project.exportSVG({ asString: true, bounds: 'content' });
-  console.log(svg);
+
+  const copyButton = document.getElementById("copy")!;
+  copyButton.addEventListener('click', () => {
+    const svg = paper.project.exportSVG({ asString: true, bounds: 'content' });
+    navigator.clipboard.writeText(svg as string).then(() => {
+      copyButton.textContent = "Copied";
+      setTimeout(() => copyButton.textContent = "Copy as svg", 500);
+    });
+  });
+  const xangle = document.getElementById("xangle")! as HTMLInputElement;
+  xangle.value = "0";
+  xangle.addEventListener('input', () => {
+    cube1.rotation[0] = xangle.valueAsNumber * Math.PI / 180;
+    cube1.update(0);
+  });
+  const yangle = document.getElementById("yangle")! as HTMLInputElement;
+  yangle.value = "0";
+  yangle.addEventListener('input', () => {
+    cube1.rotation[1] = yangle.valueAsNumber * Math.PI / 180;
+    cube1.update(0);
+  });
+  const zangle = document.getElementById("zangle")! as HTMLInputElement;
+  zangle.value = "0";
+  zangle.addEventListener('input', () => {
+    cube1.rotation[2] = zangle.valueAsNumber * Math.PI / 180;
+    cube1.update(0);
+  });
+  const explosion = document.getElementById("explosion")! as HTMLInputElement;
+  explosion.value = "0";
+  explosion.addEventListener('input', () => {
+    cube1.explosion = explosion.valueAsNumber * .5 / 100;
+    cube1.update(0);
+  });
 
 });
 
@@ -325,5 +359,5 @@ function positionFlag(flagItem: paper.Item, ratio: number) {
   flagItem.bounds.width = paper.view.bounds.height * (1920 / 931) * .4;
   flagItem.bounds.height = flagItem.bounds.width / ratio;
   flagItem.position = paper.view.center;
- 
+
 }

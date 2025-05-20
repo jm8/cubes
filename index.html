@@ -9,6 +9,25 @@
 </head>
 
 <body>
+  <div id="buttons">
+    <button id="copy">Copy as svg</button>
+    <label>
+      X angle
+      <input type="range" id="xangle" min="0" max="359" value="0">
+    </label>
+    <label>
+      Y angle
+      <input type="range" id="yangle" min="0" max="359" value="0">
+    </label>
+    <label>
+      Z angle
+      <input type="range" id="zangle" min="0" max="359" value="0">
+    </label>
+    <label>
+      Explosion
+      <input type="range" id="explosion" min="0" max="100" value="0">
+    </label>
+  </div>
   <canvas id="canvas"></canvas>
   <script type="module" src="/src/main.ts"></script>
 </body>

@@ -1,10 +1,48 @@
 canvas {
   position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* width: 100vw; */
+  /* height: 100vh; */
+  width: 500px;
+  height: 500px;
+  background-color: #1f1f1f;
+}
+
+#buttons {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #1f1f1f;
+  padding: 2em;
+  z-index: 1;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 2em;
+  font-family: sans-serif;
+  accent-color: #aa0000;
+}
+
+button {
+  background-color: #aa0000;
+  color: white;
+  border: none;
+  border-radius: 0;
+  padding: 1em;
+  cursor: hover;
+  width: 10em;
+}
+
+#buttons label {
+  display: grid;
+  grid-template-columns: 5em 300px;
+}
+
+button:hover {
+  background-color: #cc0000;
 }
 
 :root {
