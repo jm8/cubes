@@ -101,8 +101,8 @@ class Cube {
           CUBE_NORMALS[faceIndex],
           this.explosion
         );
-        vec3.rotateX(transformed, transformed, origin, this.rotation[0]);
         vec3.rotateY(transformed, transformed, origin, this.rotation[1]);
+        vec3.rotateX(transformed, transformed, origin, this.rotation[0]);
         vec3.rotateZ(transformed, transformed, origin, this.rotation[2]);
         const z = transformed[2];
         vec3.scale(transformed, transformed, this.scale);
@@ -301,10 +301,12 @@ window.addEventListener("load", () => {
   //   }
   // };
   //
+  const initialRotation = [0, 45, 0] as const;
+  
   const cube1 = new Cube({
     position: vec3.fromValues(0, 0, 0),
     velocity: vec3.fromValues(0, 0, 0),
-    rotation: vec3.fromValues(0, 0, 0),
+    rotation: vec3.fromValues(initialRotation[0] * Math.PI / 180, initialRotation[1] * Math.PI / 180, initialRotation[2] * Math.PI / 180),
     rotationalVelocity: vec3.fromValues(0, 0, 0),
     color: new paper.Color("#ffffff"),
     explosion: 0,
@@ -324,19 +326,19 @@ window.addEventListener("load", () => {
     });
   });
   const xangle = document.getElementById("xangle")! as HTMLInputElement;
-  xangle.value = "0";
+  xangle.valueAsNumber = initialRotation[0];
   xangle.addEventListener('input', () => {
     cube1.rotation[0] = xangle.valueAsNumber * Math.PI / 180;
     cube1.update(0);
   });
   const yangle = document.getElementById("yangle")! as HTMLInputElement;
-  yangle.value = "0";
+  yangle.valueAsNumber = initialRotation[1];
   yangle.addEventListener('input', () => {
     cube1.rotation[1] = yangle.valueAsNumber * Math.PI / 180;
     cube1.update(0);
   });
   const zangle = document.getElementById("zangle")! as HTMLInputElement;
-  zangle.value = "0";
+  zangle.valueAsNumber = initialRotation[2];
   zangle.addEventListener('input', () => {
     cube1.rotation[2] = zangle.valueAsNumber * Math.PI / 180;
     cube1.update(0);
@@ -344,7 +346,7 @@ window.addEventListener("load", () => {
   const explosion = document.getElementById("explosion")! as HTMLInputElement;
   explosion.value = "0";
   explosion.addEventListener('input', () => {
-    cube1.explosion = explosion.valueAsNumber * .5 / 100;
+    cube1.explosion = explosion.valueAsNumber * 1.5 / 100;
     cube1.update(0);
   });
 
